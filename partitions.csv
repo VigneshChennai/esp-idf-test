@@ -1,0 +1,4 @@
+# Name,   Type, Subtype, Offset,   Size,     Flags
+nvs,      data, nvs,     0x9000,   20K,
+factory,  app,  factory,       ,  3000K,
+storage,  data, spiffs,        ,  1024K,
