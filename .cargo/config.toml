@@ -14,3 +14,8 @@ MCU="esp32"
 # Note: this variable is not used by the pio builder (`cargo build --features pio`)
 ESP_IDF_VERSION = "v5.3.3"
 
+[profile.release]
+# This adds debug information in ELF. Will be very handy
+# during debugging code panics
+# It has no impact on the binary written to device as these will be stripped out.
+debug = true

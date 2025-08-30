@@ -21,6 +21,28 @@ const SSID: &str = "NETGEAR13";
 const PASSWORD: &str = "royalphoenix978";
 
 
+fn tls_support() {
+    use rustls::crypto::CryptoProvider;
+    use rustls_rustcrypto::provider;
+    CryptoProvider::install_default(provider()).unwrap();
+}
+
+async fn initialize_time() -> Result<()> {
+    use esp_idf_svc::sntp::{EspSntp, SyncStatus};
+    info!("Initializing SNTP and waiting for time sync...");
+    // Create a new SNTP instance with default configuration
+    let sntp = EspSntp::new_default()?;
+
+    // Wait for synchronization to complete
+    while sntp.get_sync_status() != SyncStatus::Completed {
+        // The underlying service is trying to sync in the background
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+    }
+
+    info!("Time synchronized");
+    Ok(())
+}
+
 fn config_eventfd() -> Result<(), esp_idf_svc::sys::EspError> {
     // Register the eventfd VFS driver to allow async operations
     // This is needed for tokio to work.
@@ -67,8 +89,10 @@ fn main() -> Result<()> {
 
     config_eventfd()?;
 
+    tls_support();
     // Run the async main function
     tokio::runtime::Builder::new_current_thread()
+      .thread_name("esp-tokio-rt".to_owned())
       .enable_all()
       .build()?
       .block_on(async_main())?;
@@ -111,15 +135,41 @@ async fn async_main() -> Result<()> {
     wifi.wait_netif_up().await?;
     info!("Wi-Fi connected!");
 
+    initialize_time().await?;
+
+    let mut first = true;
     loop {
+        if first {
+            first = false;
+        } else {
+            info!("Sleeping for 5 seconds");
+            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
+            info!("Looping again...");
+        }
+
         let ip_info = wifi.wifi().sta_netif().get_ip_info()?;
         info!("IP Info: {:?}", ip_info);
         print_memory_info();
         // Leaking memory to testing 
         // 1. if memory tracking working as expected
         // 2. what happens on OOM
-        let _ = "New string object".to_owned().leak();
-        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
 
+        // let _ = "New string object".to_owned().leak();
+
+        // Testing if network access using standard client works.
+        let response = reqwest::get("https://ifconfig.me/ip")
+            .await;
+        
+        let data = match response {
+            Err(e) => {
+                info!("Error in network request: {:?}", e);
+                continue;
+            },
+            Ok(resp) => resp.text().await?
+        };
+
+        let ip = data.trim();
+
+        info!("Public IP: {}", ip);
     }
 }
