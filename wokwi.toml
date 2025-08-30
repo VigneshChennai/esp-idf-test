@@ -1,5 +1,5 @@
 [wokwi]
 version = 1
 gdbServerPort = 3333
-elf = "target/xtensa-esp32s2-espidf/debug/esp-idf-test"
-firmware = "target/xtensa-esp32s2-espidf/debug/esp-idf-test"
+elf = "target/xtensa-esp32-espidf/release/esp-idf-test"
+firmware = "target/xtensa-esp32-espidf/release/esp-idf-test"

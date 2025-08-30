@@ -4,12 +4,12 @@
     "author": "Vigneshwaran P <vignesh@forge.gg>",
     "parts": [
         {
-            "type": "board-esp32-s2-devkitm-1",
+            "type": "board-esp32-devkit-c-v4",
             "id": "esp",
             "top": 0.59,
             "left": 0.67,
             "attrs": {
-                "flashSize": "16"
+                "flashSize": "4"
             }
         }
     ],
